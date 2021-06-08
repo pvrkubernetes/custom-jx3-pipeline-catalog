@@ -44,6 +44,11 @@ spec:
             #!/bin/sh
             jhipster jdl jhipster.jdl --skip install
         - image: jhipster/jhipster
+          name: jhipster-jdl-sed
+          script: |
+            #!/bin/sh
+            sed 's/<arguments>install<\/arguments>/<arguments>install --force<\/arguments>/' pom.xml
+        - image: jhipster/jhipster
           name: jhipster-jdl-mvn
           script: |
             #!/bin/sh
