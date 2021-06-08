@@ -40,7 +40,7 @@ spec:
           name: jhipster-jdl
           script: |
             #!/bin/sh
-            jhipster jdl jhipster.jdl --skip install
+            jhipster jdl jhipster.jdl --skip-install
         - image: jhipster/jhipster
           name: jhipster-jdl-sed
           script: |
