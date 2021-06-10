@@ -4,11 +4,6 @@ metadata:
   creationTimestamp: null
   name: release
 spec:
-  podTemplate:
-    securityContext:
-      runAsNonRoot: true
-      runAsUser: 1000
-      runAsGroup: 1000
   pipelineSpec:
     tasks:
     - name: from-build-pack
@@ -23,38 +18,42 @@ spec:
               -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
           - name: MAVEN_OPTS
             value: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
-          image: uses:pvrkubernetes/custom-jx3-pipeline-catalog/tasks/maven-java11/release.yaml@versionStream
+          image: uses:jenkins-x/jx3-pipeline-catalog/tasks/maven-java11/release.yaml@versionStream
           name: ""
           resources:
             requests:
               cpu: 400m
               memory: 512Mi
           volumeMounts:
-          - mountPath: /home/jhipster/.m2/
+          - mountPath: /root/.m2/
             name: maven-settings
           - mountPath: /root/.gnupg
             name: release-gpg
           workingDir: /workspace/source
         steps:
-        - image: uses:pvrkubernetes/custom-jx3-pipeline-catalog/tasks/git-clone/git-clone.yaml@versionStream
+        - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone.yaml@versionStream
           name: ""
           resources: {}
         - name: next-version
           resources: {}
         - name: jx-variables
-          resources: {}    
-        - image: jhipster/jhipster
-          name: jhipster-jdl
+          resources: {}
+        - name: jhipster-jdl
+          image: maven:3.6-openjdk-11
           script: |
             #!/bin/sh
-            echo jhipster | sudo -S chmod -R +777 ./
+            #echo jhipster | sudo -S chmod -R +777 ./
+            curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+            apt-get install -y nodejs
+            npm install -g generator-jhipster
             jhipster jdl jhipster.jdl --no-insight --force --skip-install
-        - image: jhipster/jhipster
-          name: jhipster-jdl-mvn
-          script: |
-            #!/bin/sh
-            ./mvnw --no-transfer-progress package -Pdev,webapp -DskipTests jib:build 
-       - name: promote-changelog
+        - name: build-mvn-deploy
+          resources: {}
+        - name: check-registry
+          resources: {}
+        - name: build-container-build
+          resources: {}
+        - name: promote-changelog
           resources: {}
         - name: promote-helm-release
           resources: {}
@@ -68,6 +67,8 @@ spec:
           secret:
             optional: true
             secretName: jenkins-release-gpg
+  podTemplate: {}
   serviceAccountName: tekton-bot
   timeout: 12h0m0s
 status: {}
+
