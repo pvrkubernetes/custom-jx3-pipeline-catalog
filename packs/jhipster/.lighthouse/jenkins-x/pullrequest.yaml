@@ -51,7 +51,7 @@ spec:
           name: jhipster-jdl-mvn
           script: |
             #!/bin/sh
-            ./mvnw --no-transfer-progress package -Pdev,webapp -DskipTests jib:build -Djib.to.image=rajatt/library:latest -Djib.to.auth.username=rajatt -Djib.to.auth.password=India@123
+            ./mvnw --no-transfer-progress package -Pdev,webapp -DskipTests jib:build 
         - name: promote-jx-preview
           resources: {}
         volumes:

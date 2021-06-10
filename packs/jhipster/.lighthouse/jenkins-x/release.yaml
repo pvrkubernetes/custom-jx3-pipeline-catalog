@@ -53,8 +53,8 @@ spec:
           name: jhipster-jdl-mvn
           script: |
             #!/bin/sh
-            ./mvnw --no-transfer-progress package -Pdev,webapp -DskipTests jib:build -Djib.to.image=rajatt/library:latest -Djib.to.auth.username=rajatt -Djib.to.auth.password=India@123
-        - name: promote-changelog
+            ./mvnw --no-transfer-progress package -Pdev,webapp -DskipTests jib:build 
+       - name: promote-changelog
           resources: {}
         - name: promote-helm-release
           resources: {}
