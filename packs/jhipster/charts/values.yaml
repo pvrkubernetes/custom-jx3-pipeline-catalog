@@ -24,7 +24,24 @@ jx:
 
 # define environment variables here as a map of key: value
 env:
+  SPRING_PROFILES_ACTIVE: prod
+  SPRING_DATASOURCE_URL: jdbc:postgresql://library-postgresql.jhipster.svc.cluster.local:5432/library
+  SPRING_DATASOURCE_USERNAME: library
+  SPRING_SLEUTH_PROPAGATION_KEYS: 'x-request-id,x-ot-span-context'
+  JAVA_OPTS: ' -Xmx256m -Xms256m'
+  SERVER_SHUTDOWN: graceful
 
+
+envValueFrom:
+  JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET: |
+    secretKeyRef:
+      name: jwt-secret
+      key: secret
+  SPRING_DATASOURCE_PASSWORD: |
+    secretKeyRef:
+      name: library-postgresql
+      key: postgresql-password
+        
 # enable this flag to use knative serve to deploy the app
 knativeDeploy: false
 

@@ -4,6 +4,11 @@ metadata:
   creationTimestamp: null
   name: release
 spec:
+  podTemplate:
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
   pipelineSpec:
     tasks:
     - name: from-build-pack
@@ -18,20 +23,20 @@ spec:
               -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
           - name: MAVEN_OPTS
             value: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
-          image: uses:jenkins-x/jx3-pipeline-catalog/tasks/maven-java11/release.yaml@versionStream
+          image: uses:pvrkubernetes/custom-jx3-pipeline-catalog/tasks/maven-java11/release.yaml@versionStream
           name: ""
           resources:
             requests:
               cpu: 400m
               memory: 512Mi
           volumeMounts:
-          - mountPath: /root/.m2/
+          - mountPath: /home/jhipster/.m2/
             name: maven-settings
           - mountPath: /root/.gnupg
             name: release-gpg
           workingDir: /workspace/source
         steps:
-        - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone.yaml@versionStream
+        - image: uses:pvrkubernetes/custom-jx3-pipeline-catalog/tasks/git-clone/git-clone.yaml@versionStream
           name: ""
           resources: {}
         - name: next-version
@@ -42,17 +47,13 @@ spec:
           name: jhipster-jdl
           script: |
             #!/bin/sh
-            jhipster jdl jhipster.jdl --skip-install
-        - image: jhipster/jhipster
-          name: jhipster-jdl-sed
-          script: |
-            #!/bin/sh
-            sed 's/<arguments>install<\/arguments>/<arguments>install --force<\/arguments>/' pom.xml
+            echo jhipster | sudo -S chmod -R +777 ./
+            jhipster jdl jhipster.jdl --no-insight --force --skip-install
         - image: jhipster/jhipster
           name: jhipster-jdl-mvn
           script: |
             #!/bin/sh
-            ./mvnw package -Pdev,webapp -DskipTests jib:build -Djib.to.image=rajatt/library:latest -Djib.to.auth.username=rajatt -Djib.to.auth.password=India@123
+            ./mvnw --no-transfer-progress package -Pdev,webapp -DskipTests jib:build -Djib.to.image=rajatt/library:latest -Djib.to.auth.username=rajatt -Djib.to.auth.password=India@123
         - name: promote-changelog
           resources: {}
         - name: promote-helm-release
@@ -67,7 +68,6 @@ spec:
           secret:
             optional: true
             secretName: jenkins-release-gpg
-  podTemplate: {}
   serviceAccountName: tekton-bot
   timeout: 12h0m0s
 status: {}

@@ -49,6 +49,10 @@ spec:
         - name: {{ $pkey }}
           value: {{ quote $pval }}
 {{- end }}
+{{- range $pkey, $pval := .Values.envValueFrom }}
+        - name: {{ $pkey }}
+          valueFrom: {{ quote $pval }}
+{{- end }}
         envFrom:
 {{ toYaml .Values.envFrom | indent 10 }}
         ports:
