@@ -67,14 +67,14 @@ spec:
           value: {{ quote $pval }}
 {{- end }}
         - name: SPRING_PROFILES_ACTIVE
-              value: prod
-            - name: JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET
-              valueFrom:
+          value: prod
+        - name: JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET
+          valueFrom:
                 secretKeyRef:
                   name: jwt-secret
                   key: secret
         - name: SPRING_DATASOURCE_PASSWORD
-              valueFrom:
+          valueFrom:
                 secretKeyRef:
                   name: library-postgresql
                   key: postgresql-password
