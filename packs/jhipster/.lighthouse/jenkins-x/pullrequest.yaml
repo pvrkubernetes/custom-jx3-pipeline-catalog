@@ -64,7 +64,7 @@ spec:
           script: |
             #!/usr/bin/env sh
             source .jx/variables.sh
-            jx gitops helm dependency build
+            jx gitops helm build
             jx preview create
         volumes:
         - name: maven-settings
