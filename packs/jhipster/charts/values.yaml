@@ -36,13 +36,10 @@ envValueFrom:
     secretKeyRef:
       name: jwt-secret
       key: secret
-  
   SPRING_DATASOURCE_PASSWORD: |
     secretKeyRef:
       name: library-postgresql
       key: postgresql-password
-
-# enable this flag to use knative serve to deploy the app
 knativeDeploy: false
 
 # HorizontalPodAutoscaler
