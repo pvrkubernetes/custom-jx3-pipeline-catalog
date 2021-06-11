@@ -45,6 +45,10 @@ spec:
             apt-get install -y nodejs
             npm install -g generator-jhipster
             jhipster jdl jhipster.jdl --no-insight --force --skip-install
+            cp kubernetes-knative/*/templates/jwt-secret.yml "$(eval echo charts/*/templates/)"
+            sed -i '/namespace: /d' "$(eval echo charts/*/templates/)"jwt-secret.yml
+            cp kubernetes-knative/*/requirements.yml  "$(eval echo charts/*/)"
+            cat kubernetes-knative/*/templates/values.yml >> "$(eval echo charts/*/values.yaml)"
         - name: build-mvn-install
           resources: {}
         - name: check-registry
