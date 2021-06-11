@@ -31,7 +31,6 @@ env:
   JAVA_OPTS: ' -Xmx256m -Xms256m'
   SERVER_SHUTDOWN: graceful
 
-
 envValueFrom:
   JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET: |
     secretKeyRef:
@@ -41,7 +40,6 @@ envValueFrom:
     secretKeyRef:
       name: library-postgresql
       key: postgresql-password
-        
 # enable this flag to use knative serve to deploy the app
 knativeDeploy: false
 
