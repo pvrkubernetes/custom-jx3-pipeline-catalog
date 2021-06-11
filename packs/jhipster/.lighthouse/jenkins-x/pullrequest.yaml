@@ -48,7 +48,7 @@ spec:
             cp kubernetes-knative/*/templates/jwt-secret.yml "$(eval echo charts/*/templates/)"
             sed -i '/namespace: /d' "$(eval echo charts/*/templates/)"jwt-secret.yml
             cp kubernetes-knative/*/requirements.yml  "$(eval echo charts/*/)"
-            cat kubernetes-knative/*/templates/values.yml >> "$(eval echo charts/*/values.yaml)"
+            cat kubernetes-knative/*/values.yml >> "$(eval echo charts/*/values.yaml)"
         - name: build-mvn-install
           resources: {}
         - name: check-registry
