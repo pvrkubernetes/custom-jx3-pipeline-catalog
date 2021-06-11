@@ -51,7 +51,7 @@ spec:
             jhipster jdl jhipster.jdl --no-insight --force --skip-install
             cp kubernetes-knative/*/templates/jwt-secret.yml "$(eval echo charts/*/templates/)"jwt-secret.yaml
             cat kubernetes-knative/*/templates/_helpers.tpl >>  "$(eval echo charts/*/templates/_helpers.tpl)"
-            sed -i '/namespace: /d' "$(eval echo charts/*/templates/)"jwt-secret.yml
+            sed -i '/namespace: /d' "$(eval echo charts/*/templates/)"jwt-secret.yaml
             cp kubernetes-knative/*/requirements.yml  "$(eval echo charts/*/)"requirements.yaml
             cat kubernetes-knative/*/values.yml >> "$(eval echo charts/*/values.yaml)"
         - name: build-mvn-deploy
