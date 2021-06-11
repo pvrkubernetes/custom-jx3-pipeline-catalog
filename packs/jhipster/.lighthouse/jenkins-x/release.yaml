@@ -17,7 +17,8 @@ spec:
               -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
               -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
           - name: MAVEN_OPTS
-            value: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
+            value: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=25
+              -Dmaven.wagon.http.retryHandler.count=3
           image: uses:jenkins-x/jx3-pipeline-catalog/tasks/maven-java11/release.yaml@versionStream
           name: ""
           resources:
@@ -38,8 +39,9 @@ spec:
           resources: {}
         - name: jx-variables
           resources: {}
-        - name: jhipster-jdl
-          image: maven:3.6-openjdk-11
+        - image: maven:3.6-openjdk-11
+          name: jhipster-jdl
+          resources: {}
           script: |
             #!/bin/sh
             #echo jhipster | sudo -S chmod -R +777 ./
@@ -60,8 +62,14 @@ spec:
           resources: {}
         - name: promote-changelog
           resources: {}
-        - name: promote-helm-release
+        - image: ghcr.io/jenkins-x/jx-boot:3.2.133
+          name: promote-helm-release
           resources: {}
+          script: |
+            #!/usr/bin/env sh
+            source .jx/variables.sh
+            jx gitops helm dependency build
+            jx gitops helm release
         - name: promote-jx-promote
           resources: {}
         volumes:
@@ -76,4 +84,3 @@ spec:
   serviceAccountName: tekton-bot
   timeout: 12h0m0s
 status: {}
-

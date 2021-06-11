@@ -17,7 +17,8 @@ spec:
               -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
               -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
           - name: MAVEN_OPTS
-            value: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=25 -Dmaven.wagon.http.retryHandler.count=3
+            value: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=25
+              -Dmaven.wagon.http.retryHandler.count=3
           image: uses:jenkins-x/jx3-pipeline-catalog/tasks/maven-java11/pullrequest.yaml@versionStream
           name: ""
           resources:
@@ -36,8 +37,9 @@ spec:
           resources: {}
         - name: build-set-version
           resources: {}
-        - name: jhipster-jdl
-          image: maven:3.6-openjdk-11 
+        - image: maven:3.6-openjdk-11
+          name: jhipster-jdl
+          resources: {}
           script: |
             #!/bin/sh
             #echo jhipster | sudo -S chmod -R +777 ./
@@ -56,8 +58,14 @@ spec:
           resources: {}
         - name: build-container-build
           resources: {}
-        - name: promote-jx-preview
+        - image: ghcr.io/jenkins-x-plugins/jx-preview:0.0.182
+          name: promote-jx-preview
           resources: {}
+          script: |
+            #!/usr/bin/env sh
+            source .jx/variables.sh
+            jx gitops helm dependency build
+            jx preview create
         volumes:
         - name: maven-settings
           secret:
