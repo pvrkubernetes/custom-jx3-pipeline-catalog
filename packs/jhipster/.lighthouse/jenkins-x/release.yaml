@@ -50,12 +50,13 @@ spec:
             npm install -g generator-jhipster
             jhipster jdl jhipster.jdl --no-insight --force --skip-install
             cp kubernetes-helm/xxxxx-helm/templates/jwt-secret.yml "$(eval echo charts/*/templates/)"jwt-secret.yaml
-            cat kubernetes-helm/xxxxx-helm/templates/_helpers.tpl >>  "$(eval echo charts/*/templates/_helpers.tpl)"
+            tail -n +2  kubernetes-helm/xxxxx-helm/templates/_helpers.tpl >>  "$(eval echo charts/*/templates/_helpers.tpl)"
             cp kubernetes-helm/xxxxx-helm/requirements.yaml  "$(eval echo charts/*/)"requirements.yaml
             cp kubernetes-helm/xxxxx-helm/templates/xxxxx-deployment.yml  "$(eval echo charts/*/templates/)"deployment.yaml
             cp kubernetes-knative/xxxxx-knative/templates/xxxxx-service.yml  "$(eval echo charts/*/templates/)"ksvc.yaml
             cat kubernetes-helm/xxxxx-helm/values.yaml >> "$(eval echo charts/*/values.yaml)"
             sed -i '/namespace: /d' "$(eval echo charts/*/templates/)"jwt-secret.yaml
+            sed -i 's/wwwww\/xxxxx/"{{ .Values.image.repository }}:{{ .Values.image.tag }}"/g' "$(eval echo   charts/*/templates/)"*
             sed -i 's/wwwww/"{{ .Values.jxRequirements.cluster.registry }}"/g' "$(eval echo   charts/*/templates/)"*
             sed -i 's/xxxxx/{{ template "fullname" . }}/g' "$(eval echo charts/*/templates/)"*
             sed -i 's/yyyyy/{{ .Values.jxRequirements.ingress.namespaceSubDomain }}{{ .Values.jxRequirements.ingress.domain }}/g' "$(eval echo charts/*/templates/)"*
