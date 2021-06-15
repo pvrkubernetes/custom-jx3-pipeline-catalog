@@ -71,6 +71,7 @@ spec:
           script: |
             #!/usr/bin/env sh
             source .jx/variables.sh
+            helm dependency build /workspace/source/charts/$REPO_NAME
             jx gitops helm build
             jx preview create
         volumes:
