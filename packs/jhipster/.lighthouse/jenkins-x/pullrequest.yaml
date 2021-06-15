@@ -48,7 +48,7 @@ spec:
             npm install -g generator-jhipster
             jhipster jdl jhipster.jdl --no-insight --force --skip-install
             cp kubernetes-helm/xxxxx-helm/templates/jwt-secret.yml "$(eval echo charts/*/templates/)"jwt-secret.yaml
-            tail -n +2 kubernetes-helm/xxxxx-helm/templates/_helpers.tpl >>  "$(eval echo charts/*/templates/_helpers.tpl)"
+            #tail -n +2 kubernetes-helm/xxxxx-helm/templates/_helpers.tpl >>  "$(eval echo charts/*/templates/_helpers.tpl)"
             cp kubernetes-helm/xxxxx-helm/requirements.yaml  "$(eval echo charts/*/)"requirements.yaml
             cp kubernetes-helm/xxxxx-helm/templates/xxxxx-deployment.yml  "$(eval echo charts/*/templates/)"deployment.yaml
             cp kubernetes-knative/xxxxx-knative/templates/xxxxx-service.yml  "$(eval echo charts/*/templates/)"ksvc.yaml
@@ -71,7 +71,8 @@ spec:
           script: |
             #!/usr/bin/env sh
             source .jx/variables.sh
-            helm dependency build /workspace/source/charts/$REPO_NAME
+            helm dependency update /workspace/source/charts/$REPO_NAME
+            helm repo add test https://charts.helm.sh/stable
             jx gitops helm build
             jx preview create
         volumes:
