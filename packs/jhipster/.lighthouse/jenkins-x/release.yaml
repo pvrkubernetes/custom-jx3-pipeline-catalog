@@ -63,7 +63,8 @@ spec:
             sed -i 's/wwwww\/xxxxx/"{{ .Values.image.repository }}:{{ .Values.image.tag }}"/g' "$(eval echo   charts/*/templates/)"*
             sed -i 's/wwwww/"{{ .Values.jxRequirements.cluster.registry }}"/g' "$(eval echo   charts/*/templates/)"*
             sed -i 's/xxxxx/{{ template "fullname" . }}/g' "$(eval echo charts/*/templates/)"*
-            sed -i '/- name: SPRING_DATASOURCE_USERNAME/{n;/value: {{ template "fullname" . }}/{s/{{ template "fullname" . }}/xxxxx/;}}' "$(eval echo charts/*/templates/            )"deployment.yaml
+            sed -i '/- name: SPRING_DATASOURCE_USERNAME/{n;/value: {{ template "fullname" . }}/{s/{{ template "fullname" . }}/xxxxx/;}}' "$(eval echo charts/*/templates/       )"deployment.yaml
+            sed -i 's/5432\/{{ template "fullname" . }}/5432\/xxxxx/;' "$(eval echo charts/*/templates/)"deployment.yaml
             sed -i 's/yyyyy/{{ .Release.Namespace }}/g' "$(eval echo charts/*/templates/)"*
             sed -i 's/zzzzz/{{ .Values.jxRequirements.ingress.namespaceSubDomain }}{{ .Values.jxRequirements.ingress.domain }}/g' "$(eval echo charts/*/templates/)"*
         - image: maven:3.6-openjdk-11
