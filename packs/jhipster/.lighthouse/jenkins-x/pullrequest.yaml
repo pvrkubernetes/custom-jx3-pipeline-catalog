@@ -28,6 +28,8 @@ spec:
           volumeMounts:
           - mountPath: /root/.m2/
             name: maven-settings
+          - mountPath: /tekton/home/npm
+            name: npmrc    
           workingDir: /workspace/source
         steps:
         - envFrom:
@@ -97,9 +99,14 @@ spec:
             sed -i 's/5432\/{{ template "fullname" . }}/5432\/xxxxx/;' "$(eval echo charts/*/templates/)"deployment.yaml
             sed -i 's/yyyyy/{{ .Release.Namespace }}/g' "$(eval echo charts/*/templates/)"*
             sed -i 's/zzzzz/{{ .Values.jxRequirements.ingress.namespaceSubDomain }}{{ .Values.jxRequirements.ingress.domain }}/g' "$(eval echo charts/*/templates/)"*
+            apt-get install -y xmlstarlet
+            xmlstarlet ed --inplace -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[id="npm install"]/x:configuration' -t elem -n arguments -v 'install --registry http://verdaccio:4872' -d '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[id="npm install"]/x:configuration/x:arguments[position() != 1]' -u '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[id="npm install"]/x:configuration/x:arguments' -v 'install --registry http://verdaccio:4873' pom.xml
         - image: maven:3.6-openjdk-11
           name: build-mvn-install
           resources: {}
+          env:
+          - name: NPM_CONFIG_USERCONFIG
+            value: /tekton/home/npm/.npmrc
           script: |
             #!/usr/bin/env bash
             source .jx/variables.sh
@@ -119,6 +126,10 @@ spec:
             #jx gitops helm build
             jx preview create
         volumes:
+        - name: npmrc
+          secret:
+              optional: true
+              secretName: npmrc  
         - name: maven-settings
           secret:
             secretName: jenkins-maven-settings
