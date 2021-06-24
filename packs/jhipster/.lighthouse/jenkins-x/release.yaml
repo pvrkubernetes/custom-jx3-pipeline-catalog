@@ -26,12 +26,12 @@ spec:
               cpu: 400m
               memory: 512Mi
           volumeMounts:
+          - mountPath: /tekton/home/npm
+            name: npmrc
           - mountPath: /root/.m2/
             name: maven-settings
           - mountPath: /root/.gnupg
             name: release-gpg
-          - mountPath: /tekton/home/npm
-            name: npmrc    
           workingDir: /workspace/source
         steps:
         - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone.yaml@versionStream
@@ -50,7 +50,7 @@ spec:
             #exit 0
             curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
             apt-get install -y nodejs
-            npm install -g generator-jhipster
+            npm install -g generator-jhipster@7.0.1
             jhipster jdl jhipster.jdl --no-insight --force --skip-install
             cp kubernetes-helm/xxxxx-helm/templates/jwt-secret.yml "$(eval echo charts/*/templates/)"jwt-secret.yaml
             #tail -n +2 kubernetes-helm/xxxxx-helm/templates/_helpers.tpl >>  "$(eval echo charts/*/templates/_helpers.tpl)"
@@ -65,12 +65,15 @@ spec:
             sed -i 's/wwwww\/xxxxx/"{{ .Values.image.repository }}:{{ .Values.image.tag }}"/g' "$(eval echo   charts/*/templates/)"*
             sed -i 's/wwwww/"{{ .Values.jxRequirements.cluster.registry }}"/g' "$(eval echo   charts/*/templates/)"*
             sed -i 's/xxxxx/{{ template "fullname" . }}/g' "$(eval echo charts/*/templates/)"*
-            sed -i '/- name: SPRING_DATASOURCE_USERNAME/{n;/value: {{ template "fullname" . }}/{s/{{ template "fullname" . }}/xxxxx/;}}' "$(eval echo charts/*/templates/       )"deployment.yaml
-            sed -i 's/5432\/{{ template "fullname" . }}/5432\/xxxxx/;' "$(eval echo charts/*/templates/)"deployment.yaml
+            sed -i '/- name: SPRING_DATASOURCE_USERNAME/{n;/value: {{ template "fullname" . }}/{s/{{ template "fullname" . }}/xxxxx/;}}' "$(eval echo charts/*/templates/            )"deployment.yaml
             sed -i 's/yyyyy/{{ .Release.Namespace }}/g' "$(eval echo charts/*/templates/)"*
             sed -i 's/zzzzz/{{ .Values.jxRequirements.ingress.namespaceSubDomain }}{{ .Values.jxRequirements.ingress.domain }}/g' "$(eval echo charts/*/templates/)"*
             apt-get install -y xmlstarlet
-            xmlstarlet ed --inplace -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[id="npm install"]/x:configuration' -t elem -n arguments -v 'install --registry http://verdaccio:4872' -d '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[id="npm install"]/x:configuration/x:arguments[position() != 1]' -u '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[id="npm install"]/x:configuration/x:arguments' -v 'install --registry http://verdaccio:4873' pom.xml
+            xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm        install"]' -t elem -n configuration pom.xml | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration' -t elem -n arguments -v 'install --registry http://verdaccio:4873' | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -d '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration[position() !=1]' | xmlstarlet   ed -N x=http://maven.apache.org/POM/4.0.0 -d '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration/x:arguments[position() !=1]' | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -u '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration/x:arguments' -v 'install --registry http://verdaccio:4873' > pom.xml.backup
+            mv pom.xml.backup pom.xml
+            xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile[x:id="api-docs"]' -t elem -n activation -v '' source/pom.xml|        xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile[x:id="api-docs"]/x:activation' -t elem -n activeByDefault -v 'true' > pom.xml.   backup
+            mv pom.xml.backup pom.xml
+            #sed -i 's/contexts: prod/contexts: prod,faker/g' "src/main/resources/config/application-prod.yml"
         - image: maven:3.6-openjdk-11
           name: build-mvn-deploy
           resources: {}
@@ -82,7 +85,7 @@ spec:
             echo "upgrading the pom to version $VERSION"
             mvn versions:set -DnewVersion=$VERSION
 
-            mvn --no-transfer-progress clean deploy -DskipTests
+            mvn --no-transfer-progress clean deploy -Pprod,api-docs -DskipTests
         - name: check-registry
           resources: {}
         - name: build-container-build
@@ -102,6 +105,10 @@ spec:
         - name: promote-jx-promote
           resources: {}
         volumes:
+        - name: npmrc
+          secret:
+              optional: true
+              secretName: npmrc  
         - name: maven-settings
           secret:
             secretName: jenkins-maven-settings
@@ -109,10 +116,6 @@ spec:
           secret:
             optional: true
             secretName: jenkins-release-gpg
-        - name: npmrc
-          secret:
-              optional: true
-              secretName: npmrc      
   podTemplate: {}
   serviceAccountName: tekton-bot
   timeout: 12h0m0s
