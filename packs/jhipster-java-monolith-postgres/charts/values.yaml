@@ -111,6 +111,14 @@ serviceAccount:
   labels: {}
 #    my-custom-label: value
 
+
+postgresql:
+  enabled: true
+  postgresqlUsername: xxxxx
+  postgresqlDatabase: xxxxx
+  postgresqlPassword: xxxxx  
+  
+  
 # values we use from the `jx-requirements.yml` file if we are using helmfile and helm 3
 jxRequirements:
   ingress:
