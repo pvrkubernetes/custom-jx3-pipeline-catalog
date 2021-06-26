@@ -59,7 +59,7 @@ spec:
             #cp kubernetes-helm/xxxxx-helm/templates/xxxxx-ingress.yml  "$(eval echo charts/*/templates/)"ingress.yaml
             #cp kubernetes-helm/xxxxx-helm/templates/xxxxx-service.yml  "$(eval echo charts/*/templates/)"service.yaml
             #cp kubernetes-knative/xxxxx-knative/templates/xxxxx-service.yml  "$(eval echo charts/*/templates/)"ksvc.yaml
-            cat kubernetes-helm/xxxxx-helm/values.yaml >> "$(eval echo charts/*/values.yaml)"
+            #cat kubernetes-helm/xxxxx-helm/values.yaml >> "$(eval echo charts/*/values.yaml)"
             sed -i '/namespace: /d' "$(eval echo charts/*/templates/)"jwt-secret.yaml
             #sed -i 's/"xxxxx/{{ template "fullname" . }}"/g' "$(eval echo charts/*/templates/_helpers.tpl)"
             sed -i 's/wwwww\/xxxxx/"{{ .Values.image.repository }}:{{ .Values.image.tag }}"/g' "$(eval echo   charts/*/templates/)"*
