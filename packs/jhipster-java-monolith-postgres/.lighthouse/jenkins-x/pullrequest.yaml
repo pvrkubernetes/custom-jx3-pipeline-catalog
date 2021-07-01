@@ -130,7 +130,7 @@ spec:
             #git pull origin $PR_HEAD_REF
             git add --all
             git commit -m "chore: regenerated" -m "Pushed PR changes merged with latest master(main) onto PR branch"
-            git push origin HEAD:refs/heads/$PR_HEAD_REF-generated
+            git push origin HEAD:refs/heads/$PR_HEAD_REF-$(echo $PULL_PULL_SHA | head -c8)-generated
             #sleep 1000
         - name: check-registry
           resources: {}

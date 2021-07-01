@@ -4,11 +4,10 @@ kind: TriggerConfig
 spec:
   presubmits:
   - name: pr
-    agent: tekton
     context: "pr"
-    always_run: false
+    always_run: true
     optional: false
-    run_if_changed: '^(jhipster\.jdl)|\.lighthouse\/jenkins-x\/pullrequest\.yaml|\.lighthouse\/jenkins-x\/release\.yaml|\.lighthouse\/jenkins-x\/triggers\.yaml'  
+    #run_if_changed: '^(jhipster\.jdl)|\.lighthouse\/jenkins-x\/pullrequest\.yaml|\.lighthouse\/jenkins-x\/release\.yaml|\.lighthouse\/jenkins-x\/triggers\.yaml'  
     source: "pullrequest.yaml"
   postsubmits:
   - name: release
