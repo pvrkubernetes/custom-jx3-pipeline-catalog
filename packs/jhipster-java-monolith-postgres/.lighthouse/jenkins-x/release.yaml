@@ -19,6 +19,8 @@ spec:
           - name: MAVEN_OPTS
             value: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=25
               -Dmaven.wagon.http.retryHandler.count=3
+          - name: XDG_CONFIG_HOME
+            value: /workspace/xdg_config
           image: uses:jenkins-x/jx3-pipeline-catalog/tasks/maven-java11/release.yaml@versionStream
           name: ""
           resources:
@@ -34,9 +36,25 @@ spec:
             name: release-gpg
           workingDir: /workspace/source
         steps:
-        - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone.yaml@versionStream
-          name: ""
+        - envFrom:
+          - secretRef:
+              name: jx-boot-job-env-vars
+              optional: true
+          image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.19.0
+          name: git-clone
           resources: {}
+          script: |
+            #!/bin/sh
+            export SUBDIR="source"
+            echo "git cloning url: $REPO_URL version $PULL_BASE_REF@$PULL_BASE_SHA to dir: $SUBDIR"
+            git config --global --add user.name ${GIT_AUTHOR_NAME:-jenkins-x-bot}
+            git config --global --add user.email ${GIT_AUTHOR_EMAIL:-jenkins-x@googlegroups.com}
+            git config --global credential.helper store
+            git clone $REPO_URL $SUBDIR
+            cd $SUBDIR
+            #git reset --hard $PULL_BASE_SHA
+            echo "checked out revision: $PULL_BASE_REF@$PULL_BASE_SHA to dir: $SUBDIR"
+          workingDir: /workspace
         - name: next-version
           resources: {}
         - name: jx-variables
@@ -65,34 +83,61 @@ spec:
             sed -i 's/wwwww\/xxxxx/"{{ .Values.image.repository }}:{{ .Values.image.tag }}"/g' "$(eval echo   charts/*/templates/)"*
             sed -i 's/wwwww/"{{ .Values.jxRequirements.cluster.registry }}"/g' "$(eval echo   charts/*/templates/)"*
             sed -i 's/xxxxx/{{ template "fullname" . }}/g' "$(eval echo charts/*/templates/)"*
-            sed -i '/- name: SPRING_DATASOURCE_USERNAME/{n;/value: {{ template "fullname" . }}/{s/{{ template "fullname" . }}/xxxxx/;}}' "$(eval echo charts/*/templates/            )"deployment.yaml
+            sed -i '/- name: SPRING_DATASOURCE_USERNAME/{n;/value: {{ template "fullname" . }}/{s/{{ template "fullname" . }}/xxxxx/;}}' "$(eval echo charts/*/templates/)"deployment.yaml
             sed -i 's/5432\/{{ template "fullname" . }}/5432\/xxxxx/;' "$(eval echo charts/*/templates/)"deployment.yaml
             sed -i 's/yyyyy/{{ .Release.Namespace }}/g' "$(eval echo charts/*/templates/)"*
             sed -i 's/zzzzz/{{ .Values.jxRequirements.ingress.namespaceSubDomain }}{{ .Values.jxRequirements.ingress.domain }}/g' "$(eval echo charts/*/templates/)"*
             apt-get install -y xmlstarlet
-            xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm        install"]' -t elem -n configuration pom.xml | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration' -t elem -n arguments -v 'install --registry http://verdaccio:4873' | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -d '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration[position() !=1]' | xmlstarlet   ed -N x=http://maven.apache.org/POM/4.0.0 -d '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration/x:arguments[position() !=1]' | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -u '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration/x:arguments' -v 'install --registry http://verdaccio:4873' > pom.xml.backup
+            xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]' -t elem -n configuration pom.xml | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration' -t elem -n arguments -v 'install --registry http://verdaccio:4873' | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -d '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration[position() !=1]' | xmlstarlet   ed -N x=http://maven.apache.org/POM/4.0.0 -d '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration/x:arguments[position() !=1]' | xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -u '/x:project/x:profiles/x:profile/x:build/x:plugins/x:plugin/x:executions/x:execution[x:id="npm install"]/x:configuration/x:arguments' -v 'install --registry http://verdaccio:4873' > pom.xml.backup
             mv pom.xml.backup pom.xml
-            xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile[x:id="api-docs"]' -t elem -n activation -v '' source/pom.xml|        xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile[x:id="api-docs"]/x:activation' -t elem -n activeByDefault -v 'true' > pom.xml.backup
+            xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile[x:id="api-docs"]' -t elem -n activation -v '' source/pom.xml| xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile[x:id="api-docs"]/x:activation' -t elem -n activeByDefault -v 'true' > pom.xml.backup
             mv pom.xml.backup pom.xml
             #sed -i 's/contexts: prod/contexts: prod,faker/g' "src/main/resources/config/application-prod.yml"
+            echo "\n####\njenkins-x related ignore \n####\n.jx/*\nVERSION" >>.gitignore
         - image: maven:3.6-openjdk-11
           name: build-mvn-deploy
           resources: {}
           script: |
             #!/usr/bin/env bash
             source .jx/variables.sh
-
-            # modify the pom.xml
             echo "upgrading the pom to version $VERSION"
             mvn versions:set -DnewVersion=$VERSION
-
             mvn --no-transfer-progress clean deploy -Pprod,api-docs -DskipTests
+        - image: ghcr.io/jenkins-x/jx-boot:3.2.26
+          name: generate-commit-branch
+          resources: {}
+          script: |
+            #!/bin/sh
+            #export TEMP_BRANCH=master-"$(date +"%Y_%m_%d_%I_%M_%p")"
+            #git checkout -b $TEMP_BRANCH
+            git add --all
+            git commit -m "chore: regenerated" -m "/pipeline cancel"
+            git pull
+            git push -f #--set-upstream origin  $TEMP_BRANCH
         - name: check-registry
           resources: {}
         - name: build-container-build
           resources: {}
-        - name: promote-changelog
+        - image: ghcr.io/jenkins-x/jx-changelog:0.0.43
+          name: promote-changelog
           resources: {}
+          script: |
+            #!/usr/bin/env sh
+            #git switch master
+            source .jx/variables.sh
+            if [ -d "charts/$REPO_NAME" ]; then
+            jx gitops yset -p version -v "$VERSION" -f ./charts/$REPO_NAME/Chart.yaml
+            jx gitops yset -p appVersion -v "$VERSION" -f ./charts/$REPO_NAME/Chart.yaml
+            jx gitops yset -p 'image.repository' -v $DOCKER_REGISTRY/$DOCKER_REGISTRY_ORG/$APP_NAME -f ./charts/$REPO_NAME/values.yaml
+            jx gitops yset -p 'image.tag' -v "$VERSION" -f ./charts/$REPO_NAME/values.yaml;
+            else echo no charts; fi
+
+            jx changelog create --version v${VERSION}
+
+            git add * || true
+            git commit -a -m "chore: release $VERSION" --allow-empty
+            git tag -fa v$VERSION -m "Release version $VERSION"
+            git push --force origin v$VERSION
         - image: ghcr.io/jenkins-x/jx-boot:3.2.133
           name: promote-helm-release
           resources: {}
@@ -108,8 +153,8 @@ spec:
         volumes:
         - name: npmrc
           secret:
-              optional: true
-              secretName: npmrc  
+            optional: true
+            secretName: npmrc
         - name: maven-settings
           secret:
             secretName: jenkins-maven-settings

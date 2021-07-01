@@ -50,25 +50,28 @@ spec:
             cd $SUBDIR
             git fetch origin $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER
             git checkout $(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER
-            git reset --hard $PULL_PULL_SHA
+            #git reset --hard $PULL_PULL_SHA
             echo "checked out revision: $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER@$PULL_PULL_SHA to dir: $SUBDIR"
-            #! /bin/bash
-
-            MESSAGE=$(git log -1 HEAD --pretty=format:%s)
-
-            if [[ "$MESSAGE" == "chore: regenerated\n/pipeline cancel" ]]; then
-            echo "already processed pullrequest; exit"
-            echo "nothing to see here -- move along"
-            exit 1
-            else
-            echo "not processed  -- continuing job"
-            fi  
+            # Does not work, and subsequent steps are executed
+            #MESSAGE=$(git log -1 HEAD --pretty=format:%s)
+            #if [[ "$MESSAGE" == "chore: regenerated\n/pipeline cancel" ]]; then
+            #echo "already processed pullrequest; exit"
+            #echo "nothing to see here -- move along"
+            #exit 1
+            #else
+            #echo "not processed  -- continuing job"
+            #fi  
           workingDir: /workspace
         - image: uses:jenkins-x/jx3-pipeline-catalog/tasks/git-clone/git-clone-pr.yaml@versionStream
           name: git-merge
           resources: {}
-        - name: jx-variables
+        - image: ghcr.io/jenkins-x/jx-boot:3.2.152
+          name: jx-variables
           resources: {}
+          script: |
+            #!/usr/bin/env sh
+            jx gitops variables
+            jx gitops pr variables
         - name: build-set-version
           resources: {}
         - image: maven:3.6-openjdk-11
@@ -76,8 +79,6 @@ spec:
           resources: {}
           script: |
             #!/bin/sh
-            #echo jhipster | sudo -S chmod -R +777 ./
-            #exit 0
             curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
             apt-get install -y nodejs
             npm install -g generator-jhipster@7.0.1
@@ -105,6 +106,7 @@ spec:
             xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile[x:id="api-docs"]' -t elem -n activation -v '' source/pom.xml| xmlstarlet ed -N x=http://maven.apache.org/POM/4.0.0 -s '/x:project/x:profiles/x:profile[x:id="api-docs"]/x:activation' -t elem -n activeByDefault -v 'true' > pom.xml.backup
             mv pom.xml.backup pom.xml
             #sed -i 's/contexts: prod/contexts: prod,faker/g' "src/main/resources/config/application-prod.yml"
+            echo "\n####\njenkins-x related ignore \n####\n.jx/*\nVERSION" >>.gitignore
         - image: maven:3.6-openjdk-11
           name: build-mvn-install
           resources: {}
@@ -113,6 +115,23 @@ spec:
             source .jx/variables.sh
             #mvn compile liquibase:diff
             mvn --no-transfer-progress -Pprod,api-docs package  -DskipTests # for java jar run, set in pom.xml
+        - image: ghcr.io/jenkins-x/jx-boot:3.2.26
+          name: generate-commit-branch
+          resources: {}
+          script: |
+            #!/bin/sh
+            #export TEMP_BRANCH=pullrequest-"$(date +"%Y_%m_%d_%I_%M_%p")"
+            #git checkout -b $TEMP_BRANCH
+            #git add --all
+            #git commit -m "chore: regenerated" -m "/pipeline cancel"
+            #git push --set-upstream origin  $TEMP_BRANCH
+            source .jx/variables.sh
+            #git checkout $PR_HEAD_REF
+            #git pull origin $PR_HEAD_REF
+            git add --all
+            git commit -m "chore: regenerated" -m "Pushed PR changes merged with latest master(main) onto PR branch"
+            git push origin HEAD:refs/heads/$PR_HEAD_REF-generated
+            #sleep 1000
         - name: check-registry
           resources: {}
         - name: build-container-build

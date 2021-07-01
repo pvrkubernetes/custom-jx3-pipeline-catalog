@@ -1,16 +1,20 @@
+#####
 apiVersion: config.lighthouse.jenkins-x.io/v1alpha1
 kind: TriggerConfig
 spec:
   presubmits:
   - name: pr
+    agent: tekton
     context: "pr"
-    always_run: true
+    always_run: false
     optional: false
+    run_if_changed: '^(jhipster\.jdl)|\.lighthouse\/jenkins-x\/pullrequest\.yaml|\.lighthouse\/jenkins-x\/release\.yaml|\.lighthouse\/jenkins-x\/triggers\.yaml'  
     source: "pullrequest.yaml"
   postsubmits:
   - name: release
     context: "release"
     source: "release.yaml"
+    run_if_changed: '^(jhipster\.jdl)|\.lighthouse\/jenkins-x\/pullrequest\.yaml|\.lighthouse\/jenkins-x\/release\.yaml|\.lighthouse\/jenkins-x\/triggers\.yaml'
     branches:
     - ^main$
     - ^master$
