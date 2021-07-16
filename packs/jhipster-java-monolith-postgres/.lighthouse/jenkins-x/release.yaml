@@ -52,7 +52,7 @@ spec:
             git config --global credential.helper store
             git clone $REPO_URL $SUBDIR
             cd $SUBDIR
-            #git reset --hard $PULL_BASE_SHA
+            git reset --hard $PULL_BASE_SHA
             echo "checked out revision: $PULL_BASE_REF@$PULL_BASE_SHA to dir: $SUBDIR"
           workingDir: /workspace
         - name: next-version
@@ -85,6 +85,7 @@ spec:
             sed -i 's/xxxxx/{{ template "fullname" . }}/g' "$(eval echo charts/*/templates/)"*
             sed -i '/- name: SPRING_DATASOURCE_USERNAME/{n;/value: {{ template "fullname" . }}/{s/{{ template "fullname" . }}/xxxxx/;}}' "$(eval echo charts/*/templates/)"deployment.yaml
             sed -i 's/5432\/{{ template "fullname" . }}/5432\/xxxxx/;' "$(eval echo charts/*/templates/)"deployment.yaml
+            sed -i 's/{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}/{{- printf "%s" .Release.Name | trunc   63 | trimSuffix "-" -}}/;' "$(eval echo charts/*/templates/)"_helpers.tpl
             sed -i 's/yyyyy/{{ .Release.Namespace }}/g' "$(eval echo charts/*/templates/)"*
             sed -i 's/zzzzz/{{ .Values.jxRequirements.ingress.namespaceSubDomain }}{{ .Values.jxRequirements.ingress.domain }}/g' "$(eval echo charts/*/templates/)"*
             apt-get install -y xmlstarlet
@@ -110,10 +111,10 @@ spec:
             #!/bin/sh
             #export TEMP_BRANCH=master-"$(date +"%Y_%m_%d_%I_%M_%p")"
             #git checkout -b $TEMP_BRANCH
+            source .jx/variables.sh
             git add --all
             git commit -m "chore: regenerated" -m "/pipeline cancel"
-            git pull
-            git push -f #--set-upstream origin  $TEMP_BRANCH
+            git push -f origin HEAD:refs/heads/master-generated #--set-upstream origin  $TEMP_BRANCH
         - name: check-registry
           resources: {}
         - name: build-container-build
@@ -123,7 +124,7 @@ spec:
           resources: {}
           script: |
             #!/usr/bin/env sh
-            #git switch master
+            git switch master
             source .jx/variables.sh
             if [ -d "charts/$REPO_NAME" ]; then
             jx gitops yset -p version -v "$VERSION" -f ./charts/$REPO_NAME/Chart.yaml

@@ -50,7 +50,7 @@ spec:
             cd $SUBDIR
             git fetch origin $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER
             git checkout $(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER
-            #git reset --hard $PULL_PULL_SHA
+            git reset --hard $PULL_PULL_SHA
             echo "checked out revision: $PULL_PULL_REF:$(echo $JOB_NAME | tr '[:lower:]' '[:upper:]')-$PULL_NUMBER@$PULL_PULL_SHA to dir: $SUBDIR"
             # Does not work, and subsequent steps are executed
             #MESSAGE=$(git log -1 HEAD --pretty=format:%s)
@@ -98,6 +98,7 @@ spec:
             sed -i 's/xxxxx/{{ template "fullname" . }}/g' "$(eval echo charts/*/templates/)"*
             sed -i '/- name: SPRING_DATASOURCE_USERNAME/{n;/value: {{ template "fullname" . }}/{s/{{ template "fullname" . }}/xxxxx/;}}' "$(eval echo charts/*/templates/)"deployment.yaml
             sed -i 's/5432\/{{ template "fullname" . }}/5432\/xxxxx/;' "$(eval echo charts/*/templates/)"deployment.yaml  
+            sed -i 's/{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}/{{- printf "%s" .Release.Name | trunc 63 | trimSuffix "-" -}}/;' "$(eval echo charts/*/templates/)"_helpers.tpl
             sed -i 's/yyyyy/{{ .Release.Namespace }}/g' "$(eval echo charts/*/templates/)"*
             sed -i 's/zzzzz/{{ .Values.jxRequirements.ingress.namespaceSubDomain }}{{ .Values.jxRequirements.ingress.domain }}/g' "$(eval echo charts/*/templates/)"*
             apt-get install -y xmlstarlet
